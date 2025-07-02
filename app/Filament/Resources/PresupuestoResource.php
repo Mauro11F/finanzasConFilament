@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\MovimientoResource\Pages;
-use App\Filament\Resources\MovimientoResource\RelationManagers;
+use App\Filament\Resources\PresupuestoResource\Pages;
+use App\Filament\Resources\PresupuestoResource\RelationManagers;
 use App\Models\Categoria;
-use App\Models\Movimiento;
+use App\Models\Presupuesto;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Components\Card;
@@ -13,53 +13,43 @@ use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class MovimientoResource extends Resource
+class PresupuestoResource extends Resource
 {
-    protected static ?string $model = Movimiento::class;
+    protected static ?string $model = Presupuesto::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-chart-bar';
+    protected static ?string $navigationIcon = 'heroicon-o-banknotes';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Card::make('Rellene lo Datos')
+                Card::make('Rellene el Formulario')
                     ->schema([
                         Forms\Components\Select::make('user_id')
                             ->label('Usuario')
                             ->required()
-                            ->options(User::all()->pluck('name', 'id')), # en las opciones del "Select" traemos "name", "id" sacados de del modelo
+                            ->options(User::all()->pluck('name', 'id')),
                         Forms\Components\Select::make('categoria_id')
-                            ->label('Categoría')
+                            ->label('Categoria')
                             ->required()
                             ->options(Categoria::all()->pluck('name', 'id')),
-                        Forms\Components\Select::make('tipo')
-                            ->required()
-                            ->options([
-                                'entrada' => 'Ingreso',
-                                'gasto' => 'Gasto',
-                            ]),
-                        Forms\Components\TextInput::make('monto')
-                            ->label('Monto')
+                        Forms\Components\TextInput::make('monto_asignado')
                             ->required()
                             ->numeric(),
-                        Forms\Components\RichEditor::make('descripcion') # RichEditor es el componente del area completamente enriquecido
-                            ->label('Descripción')
+                        Forms\Components\TextInput::make('monto_gastado')
                             ->required()
-                            ->columnSpanFull(),
-                        Forms\Components\FileUpload::make('foto') # componenete FileUpload permite subir archivos
-                            ->label('Foto')
-                            ->image()
-                            ->disk('public') # especificamos el disco donde se guardará la foto
-                            ->directory('movimientos'), # especificamos el directorio dentro del disco
+                            ->numeric()
+                            ->default(0.00)
+                            ->disabled() # deshabilita el campo para que no se pueda editar.
+                            ->dehydrated(), # Envía al servidor el campo aun si esta desabilitado.
                         Forms\Components\DatePicker::make('fecha')
                             ->required(),
-                    ])->columns(2) # especificamos que el formulario tendrá tantas columnas
+                    ])->columns(2)
+
             ]);
     }
 
@@ -73,23 +63,18 @@ class MovimientoResource extends Resource
                     ->rowIndex(),
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Usuario')
-                    ->searchable() # permite buscar por el nombre del usuario
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('categoria.name')
-                    ->label('Categoría')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('tipo'),
-                Tables\Columns\TextColumn::make('monto')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('descripcion')
-                    ->limit(20)
-                    ->html(), # limita la cantidad de caracteres que se muestran
-                Tables\Columns\ImageColumn::make('foto')
-                    ->searchable()
-                    ->width(50) # ancho de la imagen en la tabla
-                    ->height(50), # alto de la imagen en la tabla
+                Tables\Columns\TextColumn::make('categoria.name')
+                    ->label('Categoria')
+                    ->numeric()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('monto_asignado')
+                    ->numeric()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('monto_gastado')
+                    ->numeric()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('fecha')
                     ->date()
                     ->sortable(),
@@ -103,13 +88,7 @@ class MovimientoResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                SelectFilter::make('tipo')
-                    ->options([
-                        'entrada' => 'Entrada',
-                        'gasto' => 'Gasto',
-                    ])
-                    ->label('Tipo')
-                    ->placeholder('Filtrar por tipo'),
+                //
             ])
             ->actions([
                 Tables\Actions\EditAction::make()
@@ -120,8 +99,8 @@ class MovimientoResource extends Resource
                     ->color('danger') # Cambia el color del boton
                     ->successNotification(
                         Notification::make()
-                            ->title('Movimiento Eliminado')
-                            ->body('el movimiento ha sido eliminado exitosamente.')
+                            ->title('Presupuesto Eliminado')
+                            ->body('el presupuesto ha sido eliminado exitosamente.')
                             ->success() # icono
                     ),
             ])
@@ -142,9 +121,9 @@ class MovimientoResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListMovimientos::route('/'),
-            'create' => Pages\CreateMovimiento::route('/create'),
-            'edit' => Pages\EditMovimiento::route('/{record}/edit'),
+            'index' => Pages\ListPresupuestos::route('/'),
+            'create' => Pages\CreatePresupuesto::route('/create'),
+            'edit' => Pages\EditPresupuesto::route('/{record}/edit'),
         ];
     }
 }

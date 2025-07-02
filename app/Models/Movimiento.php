@@ -27,4 +27,26 @@ class Movimiento extends Model
     {
         return $this->belongsTo(Categoria::class);
     }
+
+
+    // Metodo para actualizar el monto gastado cuando se creo un movimiento
+    protected static function booted()
+    {
+        static::created(function ($movimiento) {
+            if ($movimiento->tipo === 'gasto') {
+                // Buscar el presupuesto correspndiente
+                $presupuesto = Presupuesto::where('user_id', $movimiento->user_id)
+                    ->where('categoria_id', $movimiento->categoria_id)
+                    ->whereMonth('fecha', now()->month)
+                    ->whereYear('fecha', now()->year)
+                    ->first();
+                
+                if ($presupuesto) {
+                    $presupuesto->monto_gastado += $movimiento->monto;
+                    $presupuesto->save();
+                }
+            }
+        });
+    }
+
 }
